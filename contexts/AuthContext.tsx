@@ -11,7 +11,7 @@ import React, {
 
 interface AuthContextType {
   user: UserProfile | null;
-  token: string | null;
+  access_token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
@@ -43,14 +43,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: !!token && !!user,
       token: !!token,
       user: !!user,
+      userEmail: user?.email,
     });
 
+    // Check both token and user are present
     if (token && user) {
       // User is authenticated - go to tabs
-      console.log("✅ User authenticated, navigating to /(tabs)");
+      console.log("✅ User authenticated, navigating to /(tabs)", {
+        userId: user.id,
+        userEmail: user.email,
+      });
       router.replace("/(tabs)");
     } else {
       // User is not authenticated - go to login
+      if (!token) console.log("❌ No token found");
+      if (!user) console.log("❌ No user found");
       console.log("❌ User not authenticated, navigating to /login");
       router.replace("/login");
     }
@@ -96,31 +103,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log("🔑 Attempting login...");
       const response = await apiService.login({ email, password });
 
-      if (response.token) {
-        console.log("✅ Login successful, token received");
-        // Save token and user immediately
-        await SecureStore.setItemAsync(TOKEN_KEY, response.token);
+      console.log("🔍 API Response:", response);
 
-        // If user data is in response, use it; otherwise fetch profile
-        let userData: UserProfile;
-        if (response.user) {
-          console.log("📋 User data in response");
-          userData = response.user;
-          await SecureStore.setItemAsync(
-            USER_KEY,
-            JSON.stringify(response.user),
-          );
-        } else {
-          console.log("📋 Fetching user profile...");
-          // Fetch profile using the token directly
-          userData = await apiService.getProfile(response.token);
-          await SecureStore.setItemAsync(USER_KEY, JSON.stringify(userData));
+      // --- SỬA Ở ĐÂY: Dùng đúng key 'access_token' như trong Postman ---
+      // Vì dùng fetch nên response chính là json body, không cần .data
+      const accessToken = response.access_token;
+
+      if (accessToken) {
+        console.log("✅ Login successful");
+
+        // 1. Lưu token
+        await SecureStore.setItemAsync(TOKEN_KEY, accessToken);
+
+        // 2. Lấy thông tin user (từ response hoặc gọi API profile)
+        let userData = response.user;
+
+        // Nếu API login không trả user, thì mới gọi getProfile
+        if (!userData) {
+          console.log("Fetching user profile...");
+          userData = await apiService.getProfile(accessToken);
         }
 
-        // Update state atomically - this will trigger the useEffect above
-        console.log("🔄 Updating auth state");
-        setToken(response.token);
+        // 3. Lưu user
+        await SecureStore.setItemAsync(USER_KEY, JSON.stringify(userData));
+
+        // 4. Cập nhật State
+        setToken(accessToken);
         setUser(userData);
+      } else {
+        console.error(
+          "❌ Server response missing 'access_token'. Keys received:",
+          Object.keys(response),
+        );
+        throw new Error("No access_token received from server");
       }
     } catch (error) {
       console.error("❌ Login error:", error);
@@ -135,7 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (response.token) {
         console.log("✅ Register successful, token received");
-        // Save token and user immediately
+        // Save token immediately
         await SecureStore.setItemAsync(TOKEN_KEY, response.token);
 
         // If user data is in response, use it; otherwise fetch profile
@@ -143,21 +158,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (response.user) {
           console.log("📋 User data in response");
           userData = response.user;
-          await SecureStore.setItemAsync(
-            USER_KEY,
-            JSON.stringify(response.user),
-          );
         } else {
           console.log("📋 Fetching user profile...");
           // Fetch profile using the token directly
           userData = await apiService.getProfile(response.token);
-          await SecureStore.setItemAsync(USER_KEY, JSON.stringify(userData));
         }
 
-        // Update state atomically - this will trigger the useEffect above
+        // Save user data
+        await SecureStore.setItemAsync(USER_KEY, JSON.stringify(userData));
+
+        // Update state atomically - MUST update token first, then user
         console.log("🔄 Updating auth state");
         setToken(response.token);
         setUser(userData);
+
+        console.log("✅ Auth state updated, waiting for navigation...");
+      } else {
+        throw new Error("No token received from server");
       }
     } catch (error) {
       console.error("❌ Register error:", error);
@@ -179,7 +196,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value: AuthContextType = {
     user,
-    token,
+    access_token: token,
     isLoading,
     isAuthenticated: !!token && !!user,
     login,

@@ -1,46 +1,52 @@
-import React, { useState } from 'react';
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { Colors } from "@/constants/theme";
+import { useAuth } from "@/contexts/AuthContext";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { AuthDebug } from "@/utils/auth-debug";
+import { Link } from "expo-router";
+import React, { useState } from "react";
 import {
-  StyleSheet,
-  ScrollView,
-  View,
-  TextInput,
-  TouchableOpacity,
-  Alert,
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
-} from 'react-native';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { Colors } from '@/constants/theme';
-import { useAuth } from '@/contexts/AuthContext';
-import { Link } from 'expo-router';
-import { IconSymbol } from '@/components/ui/icon-symbol';
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export default function LoginScreen() {
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
   const { login, isLoading } = useAuth();
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>(
+    {},
+  );
+  const [showDebug, setShowDebug] = useState(false);
+  const [debugLoading, setDebugLoading] = useState(false);
 
   const validate = () => {
     const newErrors: { email?: string; password?: string } = {};
 
     if (!email.trim()) {
-      newErrors.email = 'Vui lòng nhập email';
+      newErrors.email = "Vui lòng nhập email";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = 'Email không hợp lệ';
+      newErrors.email = "Email không hợp lệ";
     }
 
     if (!password) {
-      newErrors.password = 'Vui lòng nhập mật khẩu';
+      newErrors.password = "Vui lòng nhập mật khẩu";
     } else if (password.length < 6) {
-      newErrors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
+      newErrors.password = "Mật khẩu phải có ít nhất 6 ký tự";
     }
 
     setErrors(newErrors);
@@ -54,8 +60,10 @@ export default function LoginScreen() {
       await login(email.trim(), password);
     } catch (error) {
       Alert.alert(
-        'Đăng nhập thất bại',
-        error instanceof Error ? error.message : 'Có lỗi xảy ra. Vui lòng thử lại.'
+        "Đăng nhập thất bại",
+        error instanceof Error
+          ? error.message
+          : "Có lỗi xảy ra. Vui lòng thử lại.",
       );
     }
   };
@@ -63,7 +71,7 @@ export default function LoginScreen() {
   return (
     <ThemedView style={styles.container}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
       >
         <ScrollView
@@ -72,7 +80,11 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.header}>
-            <IconSymbol name="cup.and.saucer.fill" size={64} color={colors.tint} />
+            <IconSymbol
+              name="cup.and.saucer.fill"
+              size={64}
+              color={colors.tint}
+            />
             <ThemedText type="title" style={styles.title}>
               Chào mừng trở lại!
             </ThemedText>
@@ -89,11 +101,15 @@ export default function LoginScreen() {
                   styles.inputContainer,
                   {
                     backgroundColor: colors.background,
-                    borderColor: errors.email ? '#ff4444' : colors.icon + '30',
+                    borderColor: errors.email ? "#ff4444" : colors.icon + "30",
                   },
                 ]}
               >
-                <IconSymbol name="envelope.fill" size={20} color={colors.icon} />
+                <IconSymbol
+                  name="envelope.fill"
+                  size={20}
+                  color={colors.icon}
+                />
                 <TextInput
                   style={[styles.input, { color: colors.text }]}
                   placeholder="Nhập email của bạn"
@@ -101,7 +117,8 @@ export default function LoginScreen() {
                   value={email}
                   onChangeText={(text) => {
                     setEmail(text);
-                    if (errors.email) setErrors({ ...errors, email: undefined });
+                    if (errors.email)
+                      setErrors({ ...errors, email: undefined });
                   }}
                   keyboardType="email-address"
                   autoCapitalize="none"
@@ -120,7 +137,9 @@ export default function LoginScreen() {
                   styles.inputContainer,
                   {
                     backgroundColor: colors.background,
-                    borderColor: errors.password ? '#ff4444' : colors.icon + '30',
+                    borderColor: errors.password
+                      ? "#ff4444"
+                      : colors.icon + "30",
                   },
                 ]}
               >
@@ -132,7 +151,8 @@ export default function LoginScreen() {
                   value={password}
                   onChangeText={(text) => {
                     setPassword(text);
-                    if (errors.password) setErrors({ ...errors, password: undefined });
+                    if (errors.password)
+                      setErrors({ ...errors, password: undefined });
                   }}
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
@@ -142,14 +162,16 @@ export default function LoginScreen() {
                   style={styles.eyeButton}
                 >
                   <IconSymbol
-                    name={showPassword ? 'eye.slash.fill' : 'eye.fill'}
+                    name={showPassword ? "eye.slash.fill" : "eye.fill"}
                     size={20}
                     color={colors.icon}
                   />
                 </TouchableOpacity>
               </View>
               {errors.password && (
-                <ThemedText style={styles.errorText}>{errors.password}</ThemedText>
+                <ThemedText style={styles.errorText}>
+                  {errors.password}
+                </ThemedText>
               )}
             </View>
 
@@ -161,20 +183,124 @@ export default function LoginScreen() {
               {isLoading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <ThemedText style={styles.loginButtonText}>Đăng nhập</ThemedText>
+                <ThemedText style={styles.loginButtonText}>
+                  Đăng nhập
+                </ThemedText>
               )}
             </TouchableOpacity>
 
             <View style={styles.registerLink}>
-              <ThemedText style={styles.registerText}>Chưa có tài khoản? </ThemedText>
+              <ThemedText style={styles.registerText}>
+                Chưa có tài khoản?{" "}
+              </ThemedText>
               <Link href="/register" asChild>
                 <TouchableOpacity>
-                  <ThemedText style={[styles.registerLinkText, { color: colors.tint }]}>
+                  <ThemedText
+                    style={[styles.registerLinkText, { color: colors.tint }]}
+                  >
                     Đăng ký ngay
                   </ThemedText>
                 </TouchableOpacity>
               </Link>
             </View>
+
+            {/* DEBUG PANEL */}
+            <Pressable
+              onPress={() => setShowDebug(!showDebug)}
+              style={styles.debugToggle}
+            >
+              <ThemedText style={styles.debugToggleText}>
+                {showDebug ? "✖️ Ẩn Debug" : "🔧 Debug"}
+              </ThemedText>
+            </Pressable>
+
+            {showDebug && (
+              <View
+                style={[
+                  styles.debugPanel,
+                  {
+                    backgroundColor: colors.background,
+                    borderColor: colors.icon,
+                  },
+                ]}
+              >
+                <ThemedText style={styles.debugTitle}>
+                  🧪 Debug Tools
+                </ThemedText>
+
+                <TouchableOpacity
+                  style={[styles.debugButton, { backgroundColor: "#4CAF50" }]}
+                  onPress={async () => {
+                    setDebugLoading(true);
+                    try {
+                      await AuthDebug.simulateLoginFlow(
+                        "test@example.com",
+                        "password123",
+                      );
+                    } catch (e) {
+                      console.error("Debug error:", e);
+                    } finally {
+                      setDebugLoading(false);
+                    }
+                  }}
+                  disabled={debugLoading}
+                >
+                  {debugLoading ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <ThemedText style={styles.debugButtonText}>
+                      Test Login Flow
+                    </ThemedText>
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.debugButton, { backgroundColor: "#2196F3" }]}
+                  onPress={async () => {
+                    setDebugLoading(true);
+                    try {
+                      await AuthDebug.runDiagnostics();
+                    } catch (e) {
+                      console.error("Debug error:", e);
+                    } finally {
+                      setDebugLoading(false);
+                    }
+                  }}
+                  disabled={debugLoading}
+                >
+                  {debugLoading ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <ThemedText style={styles.debugButtonText}>
+                      Run Diagnostics
+                    </ThemedText>
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.debugButton, { backgroundColor: "#f44336" }]}
+                  onPress={async () => {
+                    setDebugLoading(true);
+                    try {
+                      await AuthDebug.clearStorage();
+                    } catch (e) {
+                      console.error("Debug error:", e);
+                    } finally {
+                      setDebugLoading(false);
+                    }
+                  }}
+                  disabled={debugLoading}
+                >
+                  {debugLoading ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <ThemedText style={styles.debugButtonText}>
+                      Clear Storage
+                    </ThemedText>
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -191,37 +317,37 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
     padding: 20,
   },
   header: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 40,
   },
   title: {
     marginTop: 20,
     marginBottom: 8,
-    textAlign: 'center',
+    textAlign: "center",
   },
   subtitle: {
     fontSize: 16,
     opacity: 0.7,
-    textAlign: 'center',
+    textAlign: "center",
   },
   form: {
-    width: '100%',
+    width: "100%",
   },
   inputGroup: {
     marginBottom: 20,
   },
   label: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 8,
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     borderWidth: 1,
     borderRadius: 12,
     paddingHorizontal: 16,
@@ -236,30 +362,30 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   errorText: {
-    color: '#ff4444',
+    color: "#ff4444",
     fontSize: 12,
     marginTop: 4,
   },
   loginButton: {
     borderRadius: 12,
     paddingVertical: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginTop: 10,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 3,
   },
   loginButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   registerLink: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     marginTop: 24,
   },
   registerText: {
@@ -267,6 +393,42 @@ const styles = StyleSheet.create({
   },
   registerLinkText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
+  },
+  debugToggle: {
+    marginTop: 24,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: "#9C27B0",
+    alignItems: "center",
+  },
+  debugToggleText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  debugPanel: {
+    marginTop: 16,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 8,
+  },
+  debugTitle: {
+    fontWeight: "600",
+    marginBottom: 8,
+    fontSize: 12,
+  },
+  debugButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    alignItems: "center",
+  },
+  debugButtonText: {
+    color: "#fff",
+    fontWeight: "500",
+    fontSize: 12,
   },
 });
