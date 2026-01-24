@@ -1,13 +1,30 @@
-import { StyleSheet, ScrollView, View, TouchableOpacity } from 'react-native';
+import { StyleSheet, ScrollView, View, TouchableOpacity, Alert } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const { user, logout } = useAuth();
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Đăng xuất',
+      'Bạn có chắc chắn muốn đăng xuất?',
+      [
+        { text: 'Hủy', style: 'cancel' },
+        {
+          text: 'Đăng xuất',
+          style: 'destructive',
+          onPress: logout,
+        },
+      ]
+    );
+  };
 
   const stats = [
     { label: 'Tổng đơn hàng', value: '24', icon: 'cart.fill', color: '#0a7ea4' },
@@ -26,12 +43,22 @@ export default function HomeScreen() {
     <ThemedView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <ThemedText type="title" style={styles.headerTitle}>
-            ☕ Quản lý Cà phê
-          </ThemedText>
-          <ThemedText style={styles.headerSubtitle}>
-            Chào mừng trở lại!
-          </ThemedText>
+          <View style={styles.headerTop}>
+            <View style={styles.headerLeft}>
+              <ThemedText type="title" style={styles.headerTitle}>
+                ☕ Quản lý Cà phê
+              </ThemedText>
+              <ThemedText style={styles.headerSubtitle}>
+                Chào mừng, {user?.name || 'Người dùng'}!
+              </ThemedText>
+            </View>
+            <TouchableOpacity
+              onPress={handleLogout}
+              style={[styles.logoutButton, { backgroundColor: colors.background }]}
+            >
+              <IconSymbol name="rectangle.portrait.and.arrow.right" size={24} color={colors.tint} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.statsContainer}>
@@ -135,6 +162,14 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingTop: 60,
   },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  headerLeft: {
+    flex: 1,
+  },
   headerTitle: {
     fontSize: 32,
     marginBottom: 8,
@@ -142,6 +177,18 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: 16,
     opacity: 0.7,
+  },
+  logoutButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   statsContainer: {
     flexDirection: 'row',
